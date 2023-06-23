@@ -31,7 +31,7 @@ const (
 	ContainerNotRunningError = "Container not running"
 
 	// pluginName is the name of the plugin
-	pluginName = "docker"
+	pluginName = "docker-ext"
 
 	// fingerprintPeriod is the interval at which the driver will send fingerprint responses
 	fingerprintPeriod = 30 * time.Second
@@ -45,69 +45,71 @@ const (
 	dockerAuthHelperPrefix = "docker-credential-"
 )
 
+func prefixOption(opt string) string {
+	return fmt.Sprintf("%s.%s", pluginName, opt)
+}
+
 func PluginLoader(opts map[string]string) (map[string]interface{}, error) {
 	conf := map[string]interface{}{}
-	if v, ok := opts["docker.endpoint"]; ok {
+	if v, ok := opts[prefixOption("endpoint")]; ok {
 		conf["endpoint"] = v
 	}
 
 	// dockerd auth
 	authConf := map[string]interface{}{}
-	if v, ok := opts["docker.auth.config"]; ok {
+	if v, ok := opts[prefixOption("auth.config")]; ok {
 		authConf["config"] = v
 	}
-	if v, ok := opts["docker.auth.helper"]; ok {
+	if v, ok := opts[prefixOption("auth.helper")]; ok {
 		authConf["helper"] = v
 	}
 	conf["auth"] = authConf
 
 	// dockerd tls
-	if _, ok := opts["docker.tls.cert"]; ok {
+	if _, ok := opts[prefixOption("tls.cert")]; ok {
 		conf["tls"] = map[string]interface{}{
-			"cert": opts["docker.tls.cert"],
-			"key":  opts["docker.tls.key"],
-			"ca":   opts["docker.tls.ca"],
+			"cert": opts[prefixOption("tls.cert")],
+			"key":  opts[prefixOption("tls.key")],
+			"ca":   opts[prefixOption("tls.ca")],
 		}
 	}
 
 	// garbage collection
 	gcConf := map[string]interface{}{}
-	if v, err := strconv.ParseBool(opts["docker.cleanup.image"]); err == nil {
+	if v, err := strconv.ParseBool(opts[prefixOption("cleanup.image")]); err == nil {
 		gcConf["image"] = v
 	}
-	if v, ok := opts["docker.cleanup.image.delay"]; ok {
+	if v, ok := opts[prefixOption("cleanup.image.delay")]; ok {
 		gcConf["image_delay"] = v
 	}
-	if v, err := strconv.ParseBool(opts["docker.cleanup.container"]); err == nil {
+	if v, err := strconv.ParseBool(opts[prefixOption("cleanup.container")]); err == nil {
 		gcConf["container"] = v
 	}
 	conf["gc"] = gcConf
 
 	// volume options
 	volConf := map[string]interface{}{}
-	if v, err := strconv.ParseBool(opts["docker.volumes.enabled"]); err == nil {
+	if v, err := strconv.ParseBool(opts[prefixOption("volumes.enabled")]); err == nil {
 		volConf["enabled"] = v
 	}
-	if v, ok := opts["docker.volumes.selinuxlabel"]; ok {
+	if v, ok := opts[prefixOption("volumes.selinuxlabel")]; ok {
 		volConf["selinuxlabel"] = v
 	}
 	conf["volumes"] = volConf
 
 	// capabilities
 	// COMPAT(1.0) uses inclusive language. whitelist is used for backward compatibility.
-	if v, ok := opts["docker.caps.allowlist"]; ok {
-		conf["allow_caps"] = strings.Split(v, ",")
-	} else if v, ok := opts["docker.caps.whitelist"]; ok {
+	if v, ok := opts[prefixOption("caps.allowlist")]; ok {
 		conf["allow_caps"] = strings.Split(v, ",")
 	}
 
 	// privileged containers
-	if v, err := strconv.ParseBool(opts["docker.privileged.enabled"]); err == nil {
+	if v, err := strconv.ParseBool(opts[prefixOption("privileged.enabled")]); err == nil {
 		conf["allow_privileged"] = v
 	}
 
 	// nvidia_runtime
-	if v, ok := opts["docker.nvidia_runtime"]; ok {
+	if v, ok := opts[prefixOption("nvidia_runtime")]; ok {
 		conf["nvidia_runtime"] = v
 	}
 
@@ -124,7 +126,7 @@ var (
 	// PluginConfig is the docker config factory function registered in the plugin catalog.
 	PluginConfig = &loader.InternalPluginConfig{
 		Config:  map[string]interface{}{},
-		Factory: func(ctx context.Context, l hclog.Logger) interface{} { return NewDockerDriver(ctx, l) },
+		Factory: func(ctx context.Context, l hclog.Logger) interface{} { return NewDockerDriver(l) },
 	}
 
 	// pluginInfo is the response returned for the PluginInfo RPC.

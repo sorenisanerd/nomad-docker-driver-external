@@ -164,7 +164,8 @@ type Driver struct {
 }
 
 // NewDockerDriver returns a docker implementation of a driver plugin
-func NewDockerDriver(ctx context.Context, logger hclog.Logger) drivers.DriverPlugin {
+func NewDockerDriver(logger hclog.Logger) drivers.DriverPlugin {
+	ctx, _ := context.WithCancel(context.Background())
 	logger = logger.Named(pluginName)
 	driver := &Driver{
 		eventer:         eventer.NewEventer(ctx, logger),

@@ -1,4 +1,4 @@
-PLUGIN_BINARY=docker-ext-driver
+PLUGIN_BINARY=docker-ext
 export GO111MODULE=on
 
 default: build

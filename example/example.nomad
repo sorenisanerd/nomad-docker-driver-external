@@ -7,10 +7,11 @@ job "example" {
 
   group "example" {
     task "hello-world" {
-      driver = "hello-world-example"
+      driver = "docker-ext"
 
       config {
-        greeting = "hello"
+        image      = "example/example"
+        privileged = true
       }
     }
   }

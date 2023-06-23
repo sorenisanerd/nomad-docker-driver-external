@@ -4,7 +4,6 @@
 package docker
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/nomad/ci"
@@ -22,10 +21,7 @@ func TestDockerDriver_FingerprintHealth(t *testing.T) {
 	ci.Parallel(t)
 	testutil.DockerCompatible(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	d := NewDockerDriver(ctx, testlog.HCLogger(t)).(*Driver)
+	d := NewDockerDriver(testlog.HCLogger(t)).(*Driver)
 
 	fp := d.buildFingerprint()
 	must.Eq(t, drivers.HealthStateHealthy, fp.Health)
@@ -39,10 +35,7 @@ func TestDockerDriver_NonRoot_CGV2(t *testing.T) {
 	testutil.CgroupsCompatibleV2(t)
 	testutil.RequireNonRoot(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	d := NewDockerDriver(ctx, testlog.HCLogger(t)).(*Driver)
+	d := NewDockerDriver(testlog.HCLogger(t)).(*Driver)
 
 	fp := d.buildFingerprint()
 	must.Eq(t, drivers.HealthStateUndetected, fp.Health)

@@ -5,6 +5,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"sort"
 	"strings"
@@ -83,6 +84,10 @@ func (d *Driver) handleFingerprint(ctx context.Context, ch chan *drivers.Fingerp
 	}
 }
 
+func prefixAttribute(attr string) string {
+	return fmt.Sprintf("driver.%s.%s", pluginName, attr)
+}
+
 func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 	fp := &drivers.Fingerprint{
 		Attributes:        make(map[string]*pstructs.Attribute, 8),
@@ -129,18 +134,18 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 	}
 
 	d.setDetected(true)
-	fp.Attributes["driver.docker"] = pstructs.NewBoolAttribute(true)
-	fp.Attributes["driver.docker.version"] = pstructs.NewStringAttribute(env.Get("Version"))
+	fp.Attributes["driver.docker-ext"] = pstructs.NewBoolAttribute(true)
+	fp.Attributes[prefixAttribute("version")] = pstructs.NewStringAttribute(env.Get("Version"))
 	if d.config.AllowPrivileged {
-		fp.Attributes["driver.docker.privileged.enabled"] = pstructs.NewBoolAttribute(true)
+		fp.Attributes[prefixAttribute("privileged.enabled")] = pstructs.NewBoolAttribute(true)
 	}
 
 	if d.config.PidsLimit > 0 {
-		fp.Attributes["driver.docker.pids.limit"] = pstructs.NewIntAttribute(d.config.PidsLimit, "")
+		fp.Attributes[prefixAttribute("pids.limit")] = pstructs.NewIntAttribute(d.config.PidsLimit, "")
 	}
 
 	if d.config.Volumes.Enabled {
-		fp.Attributes["driver.docker.volumes.enabled"] = pstructs.NewBoolAttribute(true)
+		fp.Attributes[prefixAttribute("volumes.enabled")] = pstructs.NewBoolAttribute(true)
 	}
 
 	if nets, err := client.ListNetworks(); err != nil {
@@ -157,7 +162,7 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 			}
 
 			if n.IPAM.Config[0].Gateway != "" {
-				fp.Attributes["driver.docker.bridge_ip"] = pstructs.NewStringAttribute(n.IPAM.Config[0].Gateway)
+				fp.Attributes[prefixAttribute("bridge_ip")] = pstructs.NewStringAttribute(n.IPAM.Config[0].Gateway)
 			} else if d.fingerprintSuccess == nil {
 				// Docker 17.09.0-ce dropped the Gateway IP from the bridge network
 				// See https://github.com/moby/moby/issues/32648
@@ -181,9 +186,9 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 		}
 		sort.Strings(runtimeNames)
 
-		fp.Attributes["driver.docker.runtimes"] = pstructs.NewStringAttribute(
+		fp.Attributes[prefixAttribute("runtimes")] = pstructs.NewStringAttribute(
 			strings.Join(runtimeNames, ","))
-		fp.Attributes["driver.docker.os_type"] = pstructs.NewStringAttribute(dockerInfo.OSType)
+		fp.Attributes[prefixAttribute("os_type")] = pstructs.NewStringAttribute(dockerInfo.OSType)
 
 		// If this situations arises, we are running in Windows 10 with Linux Containers enabled via VM
 		if runtime.GOOS == "windows" && dockerInfo.OSType == "linux" {

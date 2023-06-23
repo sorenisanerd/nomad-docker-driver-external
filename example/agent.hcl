@@ -3,8 +3,13 @@
 
 log_level = "TRACE"
 
-plugin "hello-driver" {
+plugin "docker-ext" {
   config {
-    shell = "bash"
+    allow_privileged = true
+  }
+  gc {
+    dangling_containers {
+      enabled = true
+    }
   }
 }
