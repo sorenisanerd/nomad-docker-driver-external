@@ -1,0 +1,54 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          cache: false
+          go-version: '1.20'
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: this.is.a.dummy/value
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+            type=sha
+            type=semver,pattern=v{{major}}.{{minor}}.{{patch}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=ref,event=tag
+            type=ref,event=branch
+
+      - name: Build
+        run: make
+
+      - name: Publish
+        env:
+          upload_token: ${{ secrets.UPLOAD_TOKEN }}
+          tags: ${{ steps.meta.outputs.tags }}
+        run: |
+          #!/bin/sh
+          if ! [ "${GITEA_ACTIONS}" = "true" ]
+          then
+            exit 0
+          fi
+          for version in $(echo "${tags}" | sed -e 's#.*:##g')
+          do
+            curl -X DELETE -v \
+            --url ${GITHUB_SERVER_URL}/api/packages/${GITHUB_REPOSITORY_OWNER}/generic/${GITHUB_REPOSITORY#*/}/${version}/docker-ext \
+            --header "authorization: token ${upload_token}"
+            curl -X PUT -v \
+            --url ${GITHUB_SERVER_URL}/api/packages/${GITHUB_REPOSITORY_OWNER}/generic/${GITHUB_REPOSITORY#*/}/${version}/docker-ext \
+            --header "authorization: token ${upload_token}" \
+            --upload-file docker-ext
+          done
