@@ -78,7 +78,8 @@ var (
 )
 
 const (
-	dockerLabelAllocID       = "com.hashicorp.nomad.alloc_id"
+	dockerLabelAllocID       = "com.hashicorp.nomad.docker_ext.alloc_id"
+	dockerLabelPluginName    = "com.hashicorp.nomad.plugin_name"
 	dockerLabelJobName       = "com.hashicorp.nomad.job_name"
 	dockerLabelJobID         = "com.hashicorp.nomad.job_id"
 	dockerLabelTaskGroupName = "com.hashicorp.nomad.task_group_name"
@@ -1327,6 +1328,9 @@ func (d *Driver) createContainerConfig(task *drivers.TaskConfig, driverConfig *T
 		if glob.Glob(configurationExtraLabel, "node_id") {
 			labels[dockerLabelNodeID] = task.NodeID
 		}
+		if glob.Glob(configurationExtraLabel, "plugin_name") {
+			labels[dockerLabelPluginName] = pluginName
+		}
 	}
 
 	config.Labels = labels
@@ -1334,7 +1338,7 @@ func (d *Driver) createContainerConfig(task *drivers.TaskConfig, driverConfig *T
 
 	config.Env = task.EnvList()
 
-	containerName := fmt.Sprintf("%s-%s", strings.ReplaceAll(task.Name, "/", "_"), task.AllocID)
+	containerName := fmt.Sprintf("%s-%s-%s", strings.ReplaceAll(task.Name, "/", "_"), task.AllocID, pluginName)
 	logger.Debug("setting container name", "container_name", containerName)
 
 	var networkingConfig *docker.NetworkingConfig
