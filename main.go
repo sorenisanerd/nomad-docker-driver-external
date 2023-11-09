@@ -4,7 +4,7 @@
 package main
 
 import (
-	"github.com/sorenisanerd/nomad-docker-driver/docker"
+	"github.com/sorenisanerd/nomad-docker-driver-external/docker"
 
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
