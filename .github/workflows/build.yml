@@ -32,6 +32,7 @@ jobs:
 
       - name: Build
         run: |
+          set -ex
           GOOS=linux GOARCH=amd64 make
           mv docker-ext docker-ext.linux.amd64
           GOOS=linux GOARCH=arm64 make

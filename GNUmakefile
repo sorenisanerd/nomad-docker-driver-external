@@ -8,4 +8,4 @@ clean: ## Remove build artifacts
 	rm -rf ${PLUGIN_BINARY}
 
 build:
-	GOOS=linux GOARCH=amd64 go build -o ${PLUGIN_BINARY} .
+	go build -o ${PLUGIN_BINARY} .
