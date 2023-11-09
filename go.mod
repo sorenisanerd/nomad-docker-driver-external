@@ -1,4 +1,4 @@
-module github.com/sorenisanerd/nomad-docker-driver
+module github.com/sorenisanerd/nomad-docker-driver-external
 
 go 1.20
 
