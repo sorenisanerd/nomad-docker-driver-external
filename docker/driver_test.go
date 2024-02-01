@@ -185,9 +185,7 @@ func cleanSlate(client *docker.Client, imageID string) {
 // A driver plugin interface and cleanup function is returned
 func dockerDriverHarness(t *testing.T, cfg map[string]interface{}) *dtestutil.DriverHarness {
 	logger := testlog.HCLogger(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(func() { cancel() })
-	harness := dtestutil.NewDriverHarness(t, NewDockerDriver(ctx, logger))
+	harness := dtestutil.NewDriverHarness(t, NewDockerDriver(logger))
 	if cfg == nil {
 		cfg = map[string]interface{}{
 			"gc": map[string]interface{}{

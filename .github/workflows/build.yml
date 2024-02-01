@@ -1,0 +1,73 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          cache: false
+          go-version: '1.20'
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: this.is.a.dummy/value
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+            type=sha
+            type=semver,pattern=v{{major}}.{{minor}}.{{patch}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=ref,event=tag
+            type=ref,event=branch
+
+      - name: Build
+        run: |
+          set -ex
+          GOOS=linux GOARCH=amd64 make
+          mv docker-ext docker-ext.linux.amd64
+          GOOS=linux GOARCH=arm64 make
+          mv docker-ext docker-ext.linux.arm64
+
+      - name: Publish
+        env:
+          upload_token: ${{ secrets.UPLOAD_TOKEN }}
+          tags: ${{ steps.meta.outputs.tags }}
+        run: |
+          #!/bin/sh
+          if ! [ "${GITEA_ACTIONS}" = "true" ]
+          then
+            exit 0
+          fi
+          for version in $(echo "${tags}" | sed -e 's#.*:##g')
+          do
+            curl -X DELETE \
+            --url ${GITHUB_SERVER_URL}/api/packages/${GITHUB_REPOSITORY_OWNER}/generic/${GITHUB_REPOSITORY#*/}/${version}/docker-ext \
+            --header "authorization: token ${upload_token}"
+            curl -X PUT \
+            --url ${GITHUB_SERVER_URL}/api/packages/${GITHUB_REPOSITORY_OWNER}/generic/${GITHUB_REPOSITORY#*/}/${version}/docker-ext \
+            --header "authorization: token ${upload_token}" \
+            --upload-file docker-ext.linux.amd64
+          done
+
+      -
+        name: Upload Linux amd64 binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-ext.linux-amd64
+          path: ./docker-ext.linux.amd64
+      -
+        name: Upload Linux arm64 binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-ext.linux-arm64
+          path: ./docker-ext.linux.arm64

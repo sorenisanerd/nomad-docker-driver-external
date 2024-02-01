@@ -6,7 +6,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"sync"
 	"time"
 
@@ -192,18 +191,7 @@ func isNomadContainer(c docker.APIContainers) bool {
 	if _, ok := c.Labels[dockerLabelAllocID]; ok {
 		return true
 	}
-
-	// pre-0.10 containers aren't tagged or labeled in any way,
-	// so use cheap heuristic based on mount paths
-	// before inspecting container details
-	if !hasMount(c, "/alloc") ||
-		!hasMount(c, "/local") ||
-		!hasMount(c, "/secrets") ||
-		!hasNomadName(c) {
-		return false
-	}
-
-	return true
+	return false
 }
 
 func hasMount(c docker.APIContainers, p string) bool {
@@ -213,17 +201,6 @@ func hasMount(c docker.APIContainers, p string) bool {
 		}
 	}
 
-	return false
-}
-
-var nomadContainerNamePattern = regexp.MustCompile(`\/.*-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
-
-func hasNomadName(c docker.APIContainers) bool {
-	for _, n := range c.Names {
-		if nomadContainerNamePattern.MatchString(n) {
-			return true
-		}
-	}
 	return false
 }
 
